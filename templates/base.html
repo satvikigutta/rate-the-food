@@ -39,10 +39,23 @@
       text-decoration: none;
     }
 
-    nav a:last-child {
+    nav a,
+    nav button {
       color: #435448;
       font-size: 0.95rem;
       text-decoration: none;
+    }
+
+    nav form {
+      margin: 0;
+    }
+
+    nav button {
+      padding: 0;
+      border: 0;
+      background: none;
+      font: inherit;
+      cursor: pointer;
     }
 
     main {
@@ -64,6 +77,65 @@
       font-size: 1.05rem;
       line-height: 1.6;
     }
+
+    .flash {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-left: 3px solid #245a3d;
+      background: #eaf1e9;
+      color: #243c2d;
+    }
+
+    .flash.error {
+      border-color: #a33a32;
+      background: #f8e9e7;
+      color: #70251f;
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 16px;
+      max-width: 400px;
+      margin-top: 28px;
+    }
+
+    .auth-form label {
+      display: grid;
+      gap: 6px;
+      color: #435448;
+      font-size: 0.95rem;
+    }
+
+    .auth-form input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #bdc8bc;
+      border-radius: 4px;
+      background: #fff;
+      color: #202820;
+      font: inherit;
+    }
+
+    .auth-form button {
+      justify-self: start;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 4px;
+      background: #245a3d;
+      color: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .auth-alternative {
+      margin-top: 20px;
+      font-size: 0.95rem;
+    }
+
+    .auth-alternative a {
+      color: #245a3d;
+    }
   </style>
 </head>
 <body>
@@ -71,9 +143,21 @@
     <nav aria-label="Main navigation">
       <a class="brand" href="{{ url_for('home') }}">Rate the Food</a>
       <a href="{{ url_for('home') }}">Home</a>
+      {% if session.get('user_id') %}
+        <span>Hi, {{ session.get('username') }}</span>
+        <form action="{{ url_for('logout') }}" method="post">
+          <button type="submit">Log out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a href="{{ url_for('register') }}">Register</a>
+      {% endif %}
     </nav>
   </header>
   <main>
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+      <div class="flash {{ category }}" role="{% if category == 'error' %}alert{% else %}status{% endif %}">{{ message }}</div>
+    {% endfor %}
     {% block content %}{% endblock %}
   </main>
 </body>

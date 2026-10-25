@@ -1,13 +1,40 @@
+import os
 import secrets
 import sqlite3
-import os
+from functools import wraps
 
-from flask import Flask, render_template_string
-from werkzeug.security import generate_password_hash
+from flask import (
+    Flask,
+    flash,
+    redirect,
+    render_template,
+    render_template_string,
+    request,
+    session,
+    url_for,
+)
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.config["DATABASE_PATH"] = os.environ.get("DATABASE_PATH", "food.db")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
+
+
+def get_db_connection():
+    connection = sqlite3.connect(app.config["DATABASE_PATH"])
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Please log in to continue.", "error")
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+
+    return wrapped_view
 
 
 def init_db():
@@ -194,6 +221,86 @@ def home():
         '<p>Discover and rate places to eat near Santa Clara University.</p>'
         '{% endblock %}'
     )
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        if not username or not password:
+            flash("Enter both a username and password.", "error")
+            return render_template("register.html", username=username)
+
+        connection = get_db_connection()
+        try:
+            with connection:
+                connection.execute(
+                    "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                    (username, generate_password_hash(password)),
+                )
+        except sqlite3.IntegrityError:
+            flash("That username is already taken. Choose another one.", "error")
+            return render_template("register.html", username=username)
+        finally:
+            connection.close()
+
+        user = get_db_connection()
+        try:
+            account = user.execute(
+                "SELECT id FROM users WHERE username = ?", (username,)
+            ).fetchone()
+        finally:
+            user.close()
+        session.clear()
+        session["user_id"] = account["id"]
+        session["username"] = username
+        flash("Your account has been created.", "success")
+        return redirect(url_for("home"))
+
+    return render_template("register.html", username="")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        if not username or not password:
+            flash("Enter both your username and password.", "error")
+            return render_template("login.html", username=username)
+
+        connection = get_db_connection()
+        try:
+            account = connection.execute(
+                "SELECT id, username, password_hash FROM users WHERE username = ?",
+                (username,),
+            ).fetchone()
+        finally:
+            connection.close()
+
+        if account is None or not check_password_hash(
+            account["password_hash"], password
+        ):
+            flash("Invalid username or password.", "error")
+            return render_template("login.html", username=username)
+
+        session.clear()
+        session["user_id"] = account["id"]
+        session["username"] = account["username"]
+        flash("You are now logged in.", "success")
+        return redirect(url_for("home"))
+
+    return render_template("login.html", username="")
+
+
+@app.post("/logout")
+def logout():
+    session.clear()
+    flash("You have been logged out.", "success")
+    return redirect(url_for("home"))
 
 
 init_db()

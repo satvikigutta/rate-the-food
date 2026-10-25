@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Register | Rate the Food{% endblock %}
+{% block content %}
+<h1>Create an account</h1>
+<form class="auth-form" method="post">
+  <label for="username">Username
+    <input id="username" name="username" type="text" value="{{ username }}" autocomplete="username" required>
+  </label>
+  <label for="password">Password
+    <input id="password" name="password" type="password" autocomplete="new-password" required>
+  </label>
+  <button type="submit">Register</button>
+</form>
+<p class="auth-alternative">Already registered? <a href="{{ url_for('login') }}">Log in</a></p>
+{% endblock %}
