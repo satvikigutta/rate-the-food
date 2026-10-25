@@ -2,6 +2,8 @@
 
 A Flask app for discovering and reviewing places to eat on and around Santa Clara University.
 
+The SQLite tables are created automatically at startup. An empty database is populated with fictional sample places, users, and reviews.
+
 ## Run locally
 
 ```sh
