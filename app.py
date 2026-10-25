@@ -18,11 +18,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 app = Flask(__name__)
 app.config["DATABASE_PATH"] = os.environ.get("DATABASE_PATH", "food.db")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
+MAX_REVIEW_LENGTH = 1000
 
 
 def get_db_connection():
     connection = sqlite3.connect(app.config["DATABASE_PATH"])
     connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
     return connection
 
 
@@ -236,6 +238,10 @@ def home():
 
 @app.get("/place/<int:place_id>")
 def place_detail(place_id):
+    return render_place_page(place_id)
+
+
+def render_place_page(place_id, form_rating=None, form_text=None):
     connection = get_db_connection()
     try:
         place = connection.execute(
@@ -265,9 +271,91 @@ def place_detail(place_id):
             """,
             (place_id,),
         ).fetchall()
+        user_review = None
+        if session.get("user_id") is not None:
+            user_review = connection.execute(
+                """
+                SELECT rating, text FROM reviews
+                WHERE user_id = ? AND place_id = ?
+                """,
+                (session["user_id"], place_id),
+            ).fetchone()
     finally:
         connection.close()
-    return render_template("place.html", place=place, reviews=reviews)
+
+    if form_rating is None:
+        form_rating = str(user_review["rating"]) if user_review else ""
+    if form_text is None:
+        form_text = user_review["text"] if user_review else ""
+    return render_template(
+        "place.html",
+        place=place,
+        reviews=reviews,
+        user_review=user_review,
+        form_rating=form_rating,
+        form_text=form_text,
+        max_review_length=MAX_REVIEW_LENGTH,
+    )
+
+
+@app.post("/place/<int:place_id>/review")
+@login_required
+def submit_review(place_id):
+    rating_value = request.form.get("rating", "")
+    review_text = request.form.get("text", "")
+    cleaned_text = review_text.strip()
+
+    try:
+        rating = int(rating_value)
+    except ValueError:
+        rating = 0
+
+    if rating < 1 or rating > 5:
+        flash("Choose a rating from 1 to 5.", "error")
+        return render_place_page(place_id, rating_value, review_text)
+    if not cleaned_text:
+        flash("Review text cannot be empty.", "error")
+        return render_place_page(place_id, rating_value, review_text)
+    if len(review_text) > MAX_REVIEW_LENGTH:
+        flash(
+            f"Review text must be {MAX_REVIEW_LENGTH} characters or fewer.", "error"
+        )
+        return render_place_page(place_id, rating_value, review_text)
+
+    connection = get_db_connection()
+    try:
+        with connection:
+            connection.execute("BEGIN IMMEDIATE")
+            existing_review = connection.execute(
+                "SELECT id FROM reviews WHERE user_id = ? AND place_id = ?",
+                (session["user_id"], place_id),
+            ).fetchone()
+            if existing_review:
+                connection.execute(
+                    """
+                    UPDATE reviews
+                    SET rating = ?, text = ?
+                    WHERE id = ? AND user_id = ?
+                    """,
+                    (rating, cleaned_text, existing_review["id"], session["user_id"]),
+                )
+                message = "Your review has been updated."
+            else:
+                connection.execute(
+                    """
+                    INSERT INTO reviews (user_id, place_id, rating, text)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (session["user_id"], place_id, rating, cleaned_text),
+                )
+                message = "Your review has been submitted."
+    except sqlite3.IntegrityError:
+        abort(404)
+    finally:
+        connection.close()
+
+    flash(message, "success")
+    return redirect(url_for("place_detail", place_id=place_id, _anchor="reviews"))
 
 
 @app.errorhandler(404)

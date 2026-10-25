@@ -13,6 +13,28 @@
   {% endif %}
   ({{ place['review_count'] }} {% if place['review_count'] == 1 %}review{% else %}reviews{% endif %})
 </p>
+<section class="review-form-section" aria-labelledby="review-form-heading">
+  {% if session.get('user_id') %}
+    <h2 id="review-form-heading">{% if user_review %}Edit your review{% else %}Write a review{% endif %}</h2>
+    <form class="review-form" action="{{ url_for('submit_review', place_id=place['id']) }}" method="post">
+      <label for="rating">Rating
+        <select id="rating" name="rating" required>
+          <option value="">Choose a rating</option>
+          {% for rating in range(1, 6) %}
+            <option value="{{ rating }}" {% if form_rating == rating|string %}selected{% endif %}>{{ rating }} / 5</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label for="review-text">Review
+        <textarea id="review-text" name="text" rows="5" maxlength="{{ max_review_length }}" required>{{ form_text }}</textarea>
+      </label>
+      <p class="review-limit">Maximum {{ max_review_length }} characters.</p>
+      <button type="submit">{% if user_review %}Save changes{% else %}Submit review{% endif %}</button>
+    </form>
+  {% else %}
+    <p><a href="{{ url_for('login') }}">Log in to review</a></p>
+  {% endif %}
+</section>
 <section class="reviews" aria-labelledby="reviews-heading">
   <h2 id="reviews-heading">Reviews</h2>
   {% for review in reviews %}
