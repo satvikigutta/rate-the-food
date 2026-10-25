@@ -21,7 +21,16 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-m
 MAX_REVIEW_LENGTH = 1000
 
 
+def ensure_database_directory():
+    database_path = app.config["DATABASE_PATH"]
+    if database_path == ":memory:":
+        return
+    database_directory = os.path.dirname(os.path.abspath(database_path))
+    os.makedirs(database_directory, exist_ok=True)
+
+
 def get_db_connection():
+    ensure_database_directory()
     connection = sqlite3.connect(app.config["DATABASE_PATH"])
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -40,6 +49,7 @@ def login_required(view):
 
 
 def init_db():
+    ensure_database_directory()
     connection = sqlite3.connect(app.config["DATABASE_PATH"])
     try:
         connection.execute("PRAGMA foreign_keys = ON")

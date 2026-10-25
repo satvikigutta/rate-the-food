@@ -13,4 +13,20 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Open <http://127.0.0.1:5000>. Set `DATABASE_PATH` to choose a SQLite database file and `SECRET_KEY` to configure Flask's secret key.
+Open <http://127.0.0.1:5000>. To run with the production WSGI server locally:
+
+```sh
+gunicorn -b 127.0.0.1:8000 app:app
+```
+
+Set `DATABASE_PATH` to choose a SQLite database file and `SECRET_KEY` to configure Flask's secret key. The parent directory for the database is created automatically. Use a strong `SECRET_KEY` outside local development.
+
+## Deploy to Cloud Run
+
+With the Google Cloud CLI installed, authenticated, and configured for your project, deploy from this directory:
+
+```sh
+gcloud run deploy --source .
+```
+
+Cloud Run uses the `Procfile` to start Gunicorn. The container's local filesystem is temporary and is not shared between instances, so its SQLite database is suitable for a demo but not durable production storage.
