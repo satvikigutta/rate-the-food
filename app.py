@@ -241,6 +241,32 @@ def place_detail(place_id):
     return render_place_page(place_id)
 
 
+@app.get("/user/<username>")
+def user_profile(username):
+    connection = get_db_connection()
+    try:
+        user = connection.execute(
+            "SELECT id, username FROM users WHERE username = ?", (username,)
+        ).fetchone()
+        if user is None:
+            abort(404)
+
+        reviews = connection.execute(
+            """
+            SELECT p.id AS place_id, p.name AS place_name, r.rating, r.text,
+                   strftime('%Y-%m-%d', r.created_at) AS review_date
+            FROM reviews AS r
+            JOIN places AS p ON p.id = r.place_id
+            WHERE r.user_id = ?
+            ORDER BY r.created_at DESC, r.id DESC
+            """,
+            (user["id"],),
+        ).fetchall()
+    finally:
+        connection.close()
+    return render_template("user.html", profile=user, reviews=reviews)
+
+
 def render_place_page(place_id, form_rating=None, form_text=None):
     connection = get_db_connection()
     try:
@@ -374,6 +400,11 @@ def submit_review(place_id):
 @app.errorhandler(404)
 def not_found(_error):
     return render_template("404.html"), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(_error):
+    return render_template("500.html"), 500
 
 
 @app.route("/register", methods=["GET", "POST"])

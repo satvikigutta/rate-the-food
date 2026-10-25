@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ profile['username'] }} | Rate the Food{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('home') }}">All places</a></p>
+<h1>{{ profile['username'] }}'s reviews</h1>
+<section class="reviews" aria-label="User reviews">
+  {% for review in reviews %}
+    <article class="review">
+      <h2 class="review-heading">
+        <a class="place-name" href="{{ url_for('place_detail', place_id=review['place_id']) }}">{{ review['place_name'] }}</a>
+        <span>{{ review['rating'] }} / 5</span>
+        <time class="review-meta" datetime="{{ review['review_date'] }}">{{ review['review_date'] }}</time>
+      </h2>
+      <p class="review-text">{{ review['text'] }}</p>
+    </article>
+  {% else %}
+    <p>This user has not reviewed any places yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}
