@@ -260,6 +260,17 @@
       font-size: 0.85rem;
     }
 
+    .rating-chart-section {
+      max-width: 640px;
+      margin-top: 32px;
+    }
+
+    .rating-chart-container {
+      position: relative;
+      height: 280px;
+      margin-top: 16px;
+    }
+
     @media (max-width: 520px) {
       .place-row {
         grid-template-columns: 24px minmax(0, 1fr);
@@ -295,5 +306,6 @@
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

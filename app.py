@@ -271,6 +271,18 @@ def render_place_page(place_id, form_rating=None, form_text=None):
             """,
             (place_id,),
         ).fetchall()
+        rating_rows = connection.execute(
+            """
+            SELECT rating, COUNT(*) AS count
+            FROM reviews
+            WHERE place_id = ?
+            GROUP BY rating
+            """,
+            (place_id,),
+        ).fetchall()
+        rating_counts = [0, 0, 0, 0, 0]
+        for rating_row in rating_rows:
+            rating_counts[rating_row["rating"] - 1] = rating_row["count"]
         user_review = None
         if session.get("user_id") is not None:
             user_review = connection.execute(
@@ -291,6 +303,7 @@ def render_place_page(place_id, form_rating=None, form_text=None):
         "place.html",
         place=place,
         reviews=reviews,
+        rating_counts=rating_counts,
         user_review=user_review,
         form_rating=form_rating,
         form_text=form_text,

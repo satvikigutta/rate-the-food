@@ -13,6 +13,12 @@
   {% endif %}
   ({{ place['review_count'] }} {% if place['review_count'] == 1 %}review{% else %}reviews{% endif %})
 </p>
+<section class="rating-chart-section" aria-labelledby="rating-chart-heading">
+  <h2 id="rating-chart-heading">Rating breakdown</h2>
+  <div class="rating-chart-container">
+    <canvas id="rating-chart" role="img" aria-label="Number of reviews for each star rating from 1 to 5"></canvas>
+  </div>
+</section>
 <section class="review-form-section" aria-labelledby="review-form-heading">
   {% if session.get('user_id') %}
     <h2 id="review-form-heading">{% if user_review %}Edit your review{% else %}Write a review{% endif %}</h2>
@@ -50,4 +56,39 @@
     <p>No reviews yet. Be the first to review this place.</p>
   {% endfor %}
 </section>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+  const ratingChart = document.getElementById("rating-chart");
+
+  new Chart(ratingChart, {
+    type: "bar",
+    data: {
+      labels: ["1 star", "2 stars", "3 stars", "4 stars", "5 stars"],
+      datasets: [{
+        label: "Reviews",
+        data: {{ rating_counts|tojson }},
+        backgroundColor: ["#b44a3d", "#d08346", "#d3ad45", "#7b9a55", "#34734a"],
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          title: { display: true, text: "Number of reviews" }
+        }
+      }
+    }
+  });
+</script>
 {% endblock %}
