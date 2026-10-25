@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Rate the Food | Santa Clara{% endblock %}
+{% block content %}
+<h1>Rate the Food</h1>
+<p>Discover places to eat on and around Santa Clara University, ranked by their reviews.</p>
+<ol class="place-list">
+  {% for place in places %}
+    <li class="place-row">
+      <span class="place-rank">{{ loop.index }}</span>
+      <div>
+        <a class="place-name" href="{{ url_for('place_detail', place_id=place['id']) }}">{{ place['name'] }}</a>
+        <p class="place-meta">{{ place['category'] }} | {{ place['location'] }}</p>
+      </div>
+      <div class="place-rating">
+        {% if place['review_count'] %}
+          {{ "%.1f"|format(place['average_rating']) }} / 5
+        {% else %}
+          No ratings
+        {% endif %}
+        <small>{{ place['review_count'] }} {% if place['review_count'] == 1 %}review{% else %}reviews{% endif %}</small>
+      </div>
+    </li>
+  {% else %}
+    <li class="place-row">No places have been added yet.</li>
+  {% endfor %}
+</ol>
+{% endblock %}

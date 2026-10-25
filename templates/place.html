@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ place['name'] }} | Rate the Food{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('home') }}">All places</a></p>
+<h1>{{ place['name'] }}</h1>
+<p class="place-meta">{{ place['category'] }} | {{ place['location'] }}</p>
+<p class="place-description">{{ place['description'] }}</p>
+<p class="place-rating">
+  {% if place['review_count'] %}
+    {{ "%.1f"|format(place['average_rating']) }} / 5
+  {% else %}
+    No ratings yet
+  {% endif %}
+  ({{ place['review_count'] }} {% if place['review_count'] == 1 %}review{% else %}reviews{% endif %})
+</p>
+<section class="reviews" aria-labelledby="reviews-heading">
+  <h2 id="reviews-heading">Reviews</h2>
+  {% for review in reviews %}
+    <article class="review">
+      <h3 class="review-heading">
+        <span>{{ review['username'] }}</span>
+        <span>{{ review['rating'] }} / 5</span>
+        <time class="review-meta" datetime="{{ review['review_date'] }}">{{ review['review_date'] }}</time>
+      </h3>
+      <p class="review-text">{{ review['text'] }}</p>
+    </article>
+  {% else %}
+    <p>No reviews yet. Be the first to review this place.</p>
+  {% endfor %}
+</section>
+{% endblock %}

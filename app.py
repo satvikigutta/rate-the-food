@@ -5,10 +5,10 @@ from functools import wraps
 
 from flask import (
     Flask,
+    abort,
     flash,
     redirect,
     render_template,
-    render_template_string,
     request,
     session,
     url_for,
@@ -214,13 +214,65 @@ def init_db():
 
 @app.get("/")
 def home():
-    return render_template_string(
-        '{% extends "base.html" %}'
-        '{% block content %}'
-        '<h1>Rate the Food</h1>'
-        '<p>Discover and rate places to eat near Santa Clara University.</p>'
-        '{% endblock %}'
-    )
+    connection = get_db_connection()
+    try:
+        places = connection.execute(
+            """
+            SELECT p.id, p.name, p.category, p.location,
+                   ROUND(AVG(r.rating), 1) AS average_rating,
+                   COUNT(r.id) AS review_count
+            FROM places AS p
+            LEFT JOIN reviews AS r ON r.place_id = p.id
+            GROUP BY p.id
+            ORDER BY CASE WHEN COUNT(r.id) = 0 THEN 1 ELSE 0 END,
+                     AVG(r.rating) DESC,
+                     p.name COLLATE NOCASE
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+    return render_template("home.html", places=places)
+
+
+@app.get("/place/<int:place_id>")
+def place_detail(place_id):
+    connection = get_db_connection()
+    try:
+        place = connection.execute(
+            """
+            SELECT p.id, p.name, p.category, p.location, p.description,
+                   ROUND(AVG(r.rating), 1) AS average_rating,
+                   COUNT(r.id) AS review_count
+            FROM places AS p
+            LEFT JOIN reviews AS r ON r.place_id = p.id
+            WHERE p.id = ?
+            GROUP BY p.id
+            """,
+            (place_id,),
+        ).fetchone()
+        if place is None:
+            abort(404)
+
+        reviews = connection.execute(
+            """
+            SELECT r.rating, r.text,
+                   strftime('%Y-%m-%d', r.created_at) AS review_date,
+                   u.username
+            FROM reviews AS r
+            JOIN users AS u ON u.id = r.user_id
+            WHERE r.place_id = ?
+            ORDER BY r.created_at DESC, r.id DESC
+            """,
+            (place_id,),
+        ).fetchall()
+    finally:
+        connection.close()
+    return render_template("place.html", place=place, reviews=reviews)
+
+
+@app.errorhandler(404)
+def not_found(_error):
+    return render_template("404.html"), 404
 
 
 @app.route("/register", methods=["GET", "POST"])

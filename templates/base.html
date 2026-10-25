@@ -136,6 +136,91 @@
     .auth-alternative a {
       color: #245a3d;
     }
+
+    .place-list {
+      margin: 32px 0 0;
+      padding: 0;
+      border-top: 1px solid #dce3da;
+      list-style: none;
+    }
+
+    .place-row {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 18px 0;
+      border-bottom: 1px solid #dce3da;
+    }
+
+    .place-rank,
+    .place-meta,
+    .review-meta {
+      color: #667267;
+      font-size: 0.9rem;
+    }
+
+    .place-name {
+      color: #245a3d;
+      font-size: 1.1rem;
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .place-meta {
+      margin: 5px 0 0;
+    }
+
+    .place-rating {
+      min-width: 106px;
+      text-align: right;
+      font-weight: 650;
+    }
+
+    .place-rating small {
+      display: block;
+      margin-top: 4px;
+      color: #667267;
+      font-size: 0.8rem;
+      font-weight: 400;
+    }
+
+    .place-description {
+      margin: 18px 0 0;
+    }
+
+    .reviews {
+      margin-top: 36px;
+    }
+
+    .review {
+      padding: 18px 0;
+      border-top: 1px solid #dce3da;
+    }
+
+    .review-heading {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      align-items: baseline;
+      margin: 0;
+    }
+
+    .review-text {
+      margin: 10px 0 0;
+    }
+
+    @media (max-width: 520px) {
+      .place-row {
+        grid-template-columns: 24px minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      .place-rating {
+        grid-column: 2;
+        text-align: left;
+      }
+    }
   </style>
 </head>
 <body>
